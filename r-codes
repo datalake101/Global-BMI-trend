@@ -1,0 +1,22 @@
+
+library(rvest)
+library(dplyr)
+library(rio)
+
+ read_html("https://en.wikipedia.org/wiki/List_of_sovereign_states_by_body_mass_index")  %>%
+  html_nodes("table") %>%
+  .[[1]]%>%
+  html_table(fill=T)  %>%
+  mutate(Country = gsub("[^A-Za-z[:space:]]", "", Country)) %>%  rename_all(tolower) %>%
+  mutate_at(vars(2:4), as.numeric)  %>%
+  inner_join(continent, by = "country") %>%
+  pivot_longer(cols = c(male, female), names_to = "gender", values_to = "percentage") %>%
+  filter(!is.na(percentage), region=='South Asia') %>% 
+  ggplot(aes(x = fct_reorder(country, percentage), y = percentage, fill = gender)) +
+  geom_bar(stat = "identity") +
+  labs(x = "", y = "Mean BMI (kg/m²)",caption='Data: WHO, 2015',
+       fill = "") +   
+  scale_fill_manual(values = c("#85865F", "#CEB793"), labels = c("Female", "Male")) +    
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7, hjust = 1), legend.position = 'bottom',
+        panel.grid = element_blank())
